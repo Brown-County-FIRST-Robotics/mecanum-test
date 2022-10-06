@@ -38,19 +38,24 @@
 #include "ctre/Phoenix.h"
 #include "DrivebaseSimFX.h"
 
+
 using namespace frc;
 
 class Robot: public TimedRobot {
 public:
 	/* ------ [1] Update CAN Device IDs and switch to WPI_VictorSPX where necessary ------*/
-	WPI_TalonFX _rghtFront{1};
-	WPI_TalonFX _rghtFollower{3};
-	WPI_TalonFX _leftFront{2};
-	WPI_TalonFX _leftFollower{4};
-
+	WPI_TalonFX front_right{1};
+	WPI_TalonFX back_right{3};
+	WPI_TalonFX front_left{2};
+	WPI_TalonFX back_left{4};
+	WPI_TalonFX shooter_top{5};
+	WPI_TalonFX shooter_bottom{6};
+	WPI_TalonSRX shooter_angle_1{7};
+	WPI_TalonSRX shooter_angle_2{8};
 	WPI_PigeonIMU _pigeon{0};
+	WPI_TalonFX intake{9};
 
-	DifferentialDrive _diffDrive{_leftFront, _rghtFront};
+	DifferentialDrive _diffDrive{front_left, front_right};
 
 	Joystick _joystick{0};
 
@@ -79,10 +84,10 @@ public:
 		work << " GF:" << forw << " GT:" << turn;
 
 		/* get sensor values */
-		//double leftPos = _leftFront.GetSelectedSensorPosition(0);
-		//double rghtPos = _rghtFront.GetSelectedSensorPosition(0);
-		double leftVelUnitsPer100ms = _leftFront.GetSelectedSensorVelocity(0);
-		double rghtVelUnitsPer100ms = _rghtFront.GetSelectedSensorVelocity(0);
+		//double leftPos = front_left.GetSelectedSensorPosition(0);
+		//double rghtPos = front_right.GetSelectedSensorPosition(0);
+		double leftVelUnitsPer100ms = front_left.GetSelectedSensorVelocity(0);
+		double rghtVelUnitsPer100ms = front_right.GetSelectedSensorVelocity(0);
 
 		work << " L:" << leftVelUnitsPer100ms << " R:" << rghtVelUnitsPer100ms;
 
@@ -92,20 +97,20 @@ public:
 
 	void RobotInit() {
 		/* factory default values */
-		_rghtFront.ConfigFactoryDefault();
-		_rghtFollower.ConfigFactoryDefault();
-		_leftFront.ConfigFactoryDefault();
-		_leftFollower.ConfigFactoryDefault();
+		front_right.ConfigFactoryDefault();
+		back_right.ConfigFactoryDefault();
+		front_left.ConfigFactoryDefault();
+		back_left.ConfigFactoryDefault();
 
 		/* set up followers */
-		_rghtFollower.Follow(_rghtFront);
-		_leftFollower.Follow(_leftFront);
+		back_right.Follow(front_right);
+		back_left.Follow(front_left);
 
 		/* [3] flip values so robot moves forward when stick-forward/LEDs-green */
-		_rghtFront.SetInverted(TalonFXInvertType::Clockwise);
-		_rghtFollower.SetInverted(TalonFXInvertType::FollowMaster);
-		_leftFront.SetInverted(TalonFXInvertType::CounterClockwise);
-		_leftFollower.SetInverted(TalonFXInvertType::FollowMaster);
+		front_right.SetInverted(TalonFXInvertType::Clockwise);
+		back_right.SetInverted(TalonFXInvertType::FollowMaster);
+		front_left.SetInverted(TalonFXInvertType::CounterClockwise);
+		back_left.SetInverted(TalonFXInvertType::FollowMaster);
 
 		/*
 		 * Talon FX does not need sensor phase set for its integrated sensor
@@ -114,14 +119,14 @@ public:
 		 * 
 		 * https://phoenix-documentation.readthedocs.io/en/latest/ch14_MCSensor.html#sensor-phase
 		 */
-		// _rghtFront.SetSensorPhase(true);
-		// _leftFront.SetSensorPhase(true);
+		// front_right.SetSensorPhase(true);
+		// front_left.SetSensorPhase(true);
 
 		frc::SmartDashboard::PutData("Field", &_driveSim.GetField());
 	}
 
 private:
-	DrivebaseSimFX _driveSim{_leftFront, _rghtFront, _pigeon};
+	DrivebaseSimFX _driveSim{front_left, front_right, _pigeon};
 };
 
 #ifndef RUNNING_FRC_TESTS
