@@ -44,4 +44,4 @@ build/
 
 # configutation files
 
-src/main/cpp/include/config.h
+src/main/include/config.h
