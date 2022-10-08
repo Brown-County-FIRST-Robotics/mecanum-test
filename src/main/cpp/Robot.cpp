@@ -9,6 +9,7 @@
 #include "DrivebaseSimFX.h"
 #include "frc/motorcontrol/MotorControllerGroup.h"
 #include "frc/drive/MecanumDrive.h"
+#include "config.h"
 
 using namespace frc;
 
@@ -19,7 +20,6 @@ public:
 	WPI_TalonFX front_left{1};
 	WPI_TalonFX front_right{2};
 	WPI_TalonFX back_right{3};
-
 	WPI_TalonFX shooter_top{6};
 	WPI_TalonFX shooter_bottom{7};
 	WPI_TalonSRX shooter_angle_1{11};
@@ -30,7 +30,6 @@ public:
 
 	Joystick _joystick{0};
 
-	// DifferentialDrive _diffDrive{front_left, front_right};
 	MecanumDrive mecDrive{front_left, back_left, front_right, back_right};
 
 	void SimulationPeriodic()
@@ -40,17 +39,9 @@ public:
 
 	void TeleopPeriodic()
 	{
-		/*
-		0:left x
-		1:left Y
-		2:right x
-		3:right y
-
-		*/
-
-		double joyX = _joystick.GetRawAxis(0);
-		double joyY = -_joystick.GetRawAxis(1);
-		double joyR = _joystick.GetRawAxis(2);
+		double joyX = _joystick.GetRawAxis(leftX);
+		double joyY = -_joystick.GetRawAxis(leftY);
+		double joyR = _joystick.GetRawAxis(rightX);
 		/* deadband gamepad 5%*/
 		if (fabs(joyR) < 0.05)
 			joyR = 0;

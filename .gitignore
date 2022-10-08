@@ -41,3 +41,7 @@ simgui.json
 
 build/
 .gradle/
+
+# configutation files
+
+src/main/cpp/include/config.h
