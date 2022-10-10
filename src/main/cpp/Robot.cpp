@@ -28,7 +28,7 @@ public:
 	WPI_TalonFX intake{12};
 	// Solenoid shooter_solenoid;
 
-	Joystick _joystick{0};
+	Joystick joystick{0};
 
 	MecanumDrive mecDrive{front_left, back_left, front_right, back_right};
 
@@ -39,9 +39,11 @@ public:
 
 	void TeleopPeriodic()
 	{
-		double joyX = _joystick.GetRawAxis(leftX);
-		double joyY = -_joystick.GetRawAxis(leftY);
-		double joyR = _joystick.GetRawAxis(rightX);
+		double joyX = joystick.GetRawAxis(leftX);
+		double joyY = -joystick.GetRawAxis(leftY);
+		double joyR = joystick.GetRawAxis(rightX);
+		
+
 		/* deadband gamepad 5%*/
 		if (fabs(joyR) < 0.05)
 			joyR = 0;
