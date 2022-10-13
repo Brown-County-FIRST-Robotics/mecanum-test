@@ -31,10 +31,17 @@
 *.out
 *.app
 
-
+# simulation files
+simgui-ds.json
+simgui-window.json
+simgui.json
 
 
 
 
 build/
 .gradle/
+
+# configutation files
+
+src/main/include/config.h

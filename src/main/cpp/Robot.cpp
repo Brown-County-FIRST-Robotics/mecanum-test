@@ -1,129 +1,173 @@
-/**
- * Phoenix Software License Agreement
- *
- * Copyright (C) Cross The Road Electronics.  All rights
- * reserved.
- * 
- * Cross The Road Electronics (CTRE) licenses to you the right to 
- * use, publish, and distribute copies of CRF (Cross The Road) firmware files (*.crf) and 
- * Phoenix Software API Libraries ONLY when in use with CTR Electronics hardware products
- * as well as the FRC roboRIO when in use in FRC Competition.
- * 
- * THE SOFTWARE AND DOCUMENTATION ARE PROVIDED "AS IS" WITHOUT
- * WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT
- * LIMITATION, ANY WARRANTY OF MERCHANTABILITY, FITNESS FOR A
- * PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT SHALL
- * CROSS THE ROAD ELECTRONICS BE LIABLE FOR ANY INCIDENTAL, SPECIAL, 
- * INDIRECT OR CONSEQUENTIAL DAMAGES, LOST PROFITS OR LOST DATA, COST OF
- * PROCUREMENT OF SUBSTITUTE GOODS, TECHNOLOGY OR SERVICES, ANY CLAIMS
- * BY THIRD PARTIES (INCLUDING BUT NOT LIMITED TO ANY DEFENSE
- * THEREOF), ANY CLAIMS FOR INDEMNITY OR CONTRIBUTION, OR OTHER
- * SIMILAR COSTS, WHETHER ASSERTED ON THE BASIS OF CONTRACT, TORT
- * (INCLUDING NEGLIGENCE), BREACH OF WARRANTY, OR OTHERWISE
- */
-/**
- * Enable robot and slowly drive forward.
- * [1] If DS reports errors, adjust CAN IDs and firmware update.
- * [2] If motors are spinning incorrectly, first check gamepad.
- * [3] If motors are still spinning incorrectly, correct motor inverts.
- * [4] Now that motors are driving correctly, check sensor phase.  If sensor is out of phase, adjust sensor phase.
- */
+/*
+TODO: add rumble
+TODO: add autonomous functions
+*/
 #include <iostream>
 #include <string>
 
 #include "frc/TimedRobot.h"
 #include "frc/Joystick.h"
+#include "frc/Solenoid.h"
 #include "frc/smartdashboard/SmartDashboard.h"
-#include "frc/drive/DifferentialDrive.h"
 #include "ctre/Phoenix.h"
 #include "DrivebaseSimFX.h"
+#include "frc/motorcontrol/MotorControllerGroup.h"
+#include "frc/drive/MecanumDrive.h"
+#include "config.h"
+#include "frc/DoubleSolenoid.h"
+#include "frc/Timer.h"
+#include "frc/PneumaticsControlModule.h"
+#include "frc/GenericHID.h"
+#include "units/time.h"
 
 using namespace frc;
 
-class Robot: public TimedRobot {
+class Robot : public TimedRobot
+{
 public:
-	/* ------ [1] Update CAN Device IDs and switch to WPI_VictorSPX where necessary ------*/
-	WPI_TalonFX _rghtFront{1};
-	WPI_TalonFX _rghtFollower{3};
-	WPI_TalonFX _leftFront{2};
-	WPI_TalonFX _leftFollower{4};
-
+	WPI_TalonFX back_left{0};
+	WPI_TalonFX front_left{1};
+	WPI_TalonFX front_right{2};
+	WPI_TalonFX back_right{3};
+	WPI_TalonFX shooter_top{6};
+	WPI_TalonFX shooter_bottom{7};
+	WPI_TalonSRX shooter_angle_1{11};
+	WPI_TalonSRX shooter_angle_2{10};
 	WPI_PigeonIMU _pigeon{0};
+	WPI_TalonFX intake{12};
 
-	DifferentialDrive _diffDrive{_leftFront, _rghtFront};
+	DoubleSolenoid shooter_solenoid{PneumaticsModuleType::CTREPCM, 0, 1};
+	Timer shooter_solenoid_timer;
+	int shooter_solenoid_previous_position = shooter_solenoid.kReverse;
 
-	Joystick _joystick{0};
+	DoubleSolenoid intake_solenoid{PneumaticsModuleType::CTREPCM, 2, 3};
+	Timer intake_solenoid_timer;
 
-	void SimulationPeriodic() {
+	MotorControllerGroup shooter_angle{shooter_angle_2, shooter_angle_1};
+
+	Joystick joystick{0};
+
+	GenericHID hid{0};
+	float driveSpeed = 0.5;
+
+	MecanumDrive mecDrive{front_left, back_left, front_right, back_right};
+
+	void SimulationPeriodic()
+	{
 		_driveSim.Run();
 	}
 
-	void TeleopPeriodic() {
+	void TeleopPeriodic()
+	{
+		double joyX = joystick.GetRawAxis(leftX);
+		double joyY = -joystick.GetRawAxis(leftY);
+		double joyR = joystick.GetRawAxis(rightX);
 
-		std::stringstream work;
+		/* deadband gamepad 5%*/
+		if (fabs(joyR) < 0.05)
+			joyR = 0;
+		if (fabs(joyX) < 0.05)
+			joyX = 0;
+		if (fabs(joyY) < 0.05)
+			joyY = 0;
+		mecDrive.DriveCartesian(joyY, joyX, joyR);
+		if (joystick.GetPOV() == -1 || joystick.GetPOV() == 90 || joystick.GetPOV() == 270)
+		{
+			shooter_angle.Set(0);
+		}
+		else if (joystick.GetPOV() == 0)
+		{
+			shooter_angle.Set(-.5);
+		}
+		else if (joystick.GetPOV() == 180)
+		{
+			shooter_angle.Set(.5);
+		}
 
-		/* get gamepad stick values */
-		double forw = -_joystick.GetRawAxis(1); /* positive is forward */
-		double turn = _joystick.GetRawAxis(2); /* positive is right */
+		#ifdef analogTrigger
+			double rTrigger = joystick.GetRawAxis(triggerR);
+			double lTrigger = joystick.GetRawAxis(triggerL);
+		#endif
 
-		/* deadband gamepad 10%*/
-		if (fabs(forw) < 0.10)
-			forw = 0;
-		if (fabs(turn) < 0.10)
-			turn = 0;
+		#ifndef analogTrigger
+			double rTrigger = joystick.GetRawButton(triggerR) ? 1.0 : -1.0;
+			double lTrigger = joystick.GetRawButton(triggerL) ? 1.0 : -1.0;
+		#endif
 
-		/* drive robot */
-		_diffDrive.ArcadeDrive(forw, turn, false);
+		if (rTrigger > lTrigger)
+		{
+			intake.Set(rTrigger);
+			shooter_bottom.Set(rTrigger);
+			shooter_top.Set(rTrigger);
+		}
+		if (rTrigger < lTrigger)
+		{
+			intake.Set(lTrigger * -.8);
+			shooter_bottom.Set(lTrigger * -.8);
+			shooter_top.Set(lTrigger * -.8);
+		}
 
-		/* -------- [2] Make sure Gamepad Forward is positive for FORWARD, and GZ is positive for RIGHT */
-		work << " GF:" << forw << " GT:" << turn;
+		if (rTrigger == lTrigger)
+		{
+			intake.Set(0);
+			shooter_bottom.Set(0);
+			shooter_top.Set(0);
+		}
 
-		/* get sensor values */
-		//double leftPos = _leftFront.GetSelectedSensorPosition(0);
-		//double rghtPos = _rghtFront.GetSelectedSensorPosition(0);
-		double leftVelUnitsPer100ms = _leftFront.GetSelectedSensorVelocity(0);
-		double rghtVelUnitsPer100ms = _rghtFront.GetSelectedSensorVelocity(0);
+		/*if(rTrigger!=0){
+			RUMBLE
+		}else{
+			DO NOT RUMBLE
+		}*/
 
-		work << " L:" << leftVelUnitsPer100ms << " R:" << rghtVelUnitsPer100ms;
-
-		/* print to console */
-		std::cout << work.str() << std::endl;
+		// solenoids:
+		if (joystick.GetRawButton(A_button))
+		{
+			shooter_solenoid_timer.Start();
+			if (shooter_solenoid_previous_position == DoubleSolenoid::kForward)
+			{
+				shooter_solenoid.Set(DoubleSolenoid::kReverse);
+				shooter_solenoid_previous_position = DoubleSolenoid::kReverse;
+			}
+			if (shooter_solenoid_previous_position == DoubleSolenoid::kReverse)
+			{
+				shooter_solenoid.Set(DoubleSolenoid::kForward);
+				shooter_solenoid_previous_position = DoubleSolenoid::kForward;
+			}
+		}
+		units::second_t quarterOfASecond = .25_s;
+		if (shooter_solenoid_timer.HasElapsed(quarterOfASecond))
+		{
+			shooter_solenoid_timer.Stop();
+			shooter_solenoid_timer.Reset();
+			shooter_solenoid_previous_position = shooter_solenoid.Get();
+			shooter_solenoid.Set(DoubleSolenoid::kOff);
+		}
 	}
 
-	void RobotInit() {
+	void RobotInit()
+	{
 		/* factory default values */
-		_rghtFront.ConfigFactoryDefault();
-		_rghtFollower.ConfigFactoryDefault();
-		_leftFront.ConfigFactoryDefault();
-		_leftFollower.ConfigFactoryDefault();
+		front_right.ConfigFactoryDefault();
+		back_right.ConfigFactoryDefault();
+		front_left.ConfigFactoryDefault();
+		back_left.ConfigFactoryDefault();
 
-		/* set up followers */
-		_rghtFollower.Follow(_rghtFront);
-		_leftFollower.Follow(_leftFront);
-
-		/* [3] flip values so robot moves forward when stick-forward/LEDs-green */
-		_rghtFront.SetInverted(TalonFXInvertType::Clockwise);
-		_rghtFollower.SetInverted(TalonFXInvertType::FollowMaster);
-		_leftFront.SetInverted(TalonFXInvertType::CounterClockwise);
-		_leftFollower.SetInverted(TalonFXInvertType::FollowMaster);
-
-		/*
-		 * Talon FX does not need sensor phase set for its integrated sensor
-		 * This is because it will always be correct if the selected feedback device is integrated sensor (default value)
-		 * and the user calls getSelectedSensor* to get the sensor's position/velocity.
-		 * 
-		 * https://phoenix-documentation.readthedocs.io/en/latest/ch14_MCSensor.html#sensor-phase
-		 */
-		// _rghtFront.SetSensorPhase(true);
-		// _leftFront.SetSensorPhase(true);
+		front_right.SetInverted(TalonFXInvertType::Clockwise);
+		back_right.SetInverted(TalonFXInvertType::FollowMaster);
+		front_left.SetInverted(TalonFXInvertType::CounterClockwise);
+		back_left.SetInverted(TalonFXInvertType::FollowMaster);
 
 		frc::SmartDashboard::PutData("Field", &_driveSim.GetField());
 	}
 
 private:
-	DrivebaseSimFX _driveSim{_leftFront, _rghtFront, _pigeon};
+	DrivebaseSimFX _driveSim{front_left, front_right, _pigeon};
 };
 
 #ifndef RUNNING_FRC_TESTS
-int main() { return frc::StartRobot<Robot>(); }
+int main()
+{
+	return frc::StartRobot<Robot>();
+}
 #endif
