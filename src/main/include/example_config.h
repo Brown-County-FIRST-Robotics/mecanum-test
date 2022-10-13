@@ -1,7 +1,7 @@
 //#define logitech_dual_action
 //#define logitech_gamepad_f310
 
-#ifdef logitech_dual_action:
+#ifdef logitech_dual_action
     #define leftX 0
     #define leftY 1
     #define rightX 2
@@ -11,7 +11,7 @@
     #define triggerR 8
 #endif
 
-#ifdef logitech_gamepad_f310:
+#ifdef logitech_gamepad_f310
     #define leftX 0
     #define leftY 1
     #define rightX 3
