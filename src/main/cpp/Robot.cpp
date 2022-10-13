@@ -13,12 +13,12 @@ TODO: add autonomous functions
 #include "DrivebaseSimFX.h"
 #include "frc/motorcontrol/MotorControllerGroup.h"
 #include "frc/drive/MecanumDrive.h"
-#include "config.h"
 #include "frc/DoubleSolenoid.h"
 #include "frc/Timer.h"
 #include "frc/PneumaticsControlModule.h"
 #include "frc/GenericHID.h"
 #include "units/time.h"
+#include "frc/XboxController.h"
 
 using namespace frc;
 
@@ -45,7 +45,7 @@ public:
 
 	MotorControllerGroup shooter_angle{shooter_angle_2, shooter_angle_1};
 
-	Joystick joystick{0};
+	XboxController controller{0};
 
 	GenericHID hid{0};
 	float driveSpeed = 0.5;
@@ -59,9 +59,9 @@ public:
 
 	void TeleopPeriodic()
 	{
-		double joyX = joystick.GetRawAxis(leftX);
-		double joyY = -joystick.GetRawAxis(leftY);
-		double joyR = joystick.GetRawAxis(rightX);
+		double joyX = controller.GetLeftX();
+		double joyY = controller.GetLeftY();
+		double joyR = controller.GetRightX();
 
 		/* deadband gamepad 5%*/
 		if (fabs(joyR) < 0.05)
@@ -71,28 +71,21 @@ public:
 		if (fabs(joyY) < 0.05)
 			joyY = 0;
 		mecDrive.DriveCartesian(joyY, joyX, joyR);
-		if (joystick.GetPOV() == -1 || joystick.GetPOV() == 90 || joystick.GetPOV() == 270)
+		if (controller.GetPOV() == -1 || controller.GetPOV() == 90 || controller.GetPOV() == 270)
 		{
 			shooter_angle.Set(0);
 		}
-		else if (joystick.GetPOV() == 0)
+		else if (controller.GetPOV() == 0)
 		{
 			shooter_angle.Set(-.5);
 		}
-		else if (joystick.GetPOV() == 180)
+		else if (controller.GetPOV() == 180)
 		{
 			shooter_angle.Set(.5);
 		}
 
-		#ifdef analogTrigger
-			double rTrigger = joystick.GetRawAxis(triggerR);
-			double lTrigger = joystick.GetRawAxis(triggerL);
-		#endif
-
-		#ifndef analogTrigger
-			double rTrigger = joystick.GetRawButton(triggerR) ? 1.0 : -1.0;
-			double lTrigger = joystick.GetRawButton(triggerL) ? 1.0 : -1.0;
-		#endif
+		double rTrigger = controller.GetRightTriggerAxis();
+		double lTrigger = controller.GetLeftTriggerAxis();
 
 		if (rTrigger > lTrigger)
 		{
@@ -121,7 +114,7 @@ public:
 		}*/
 
 		// solenoids:
-		if (joystick.GetRawButton(A_button))
+		if (controller.GetAButton())
 		{
 			shooter_solenoid_timer.Start();
 			if (shooter_solenoid_previous_position == DoubleSolenoid::kForward)
