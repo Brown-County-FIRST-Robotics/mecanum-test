@@ -2,7 +2,7 @@
 
 to build the robot's code, run:
 ```bash
-./gradlew generateVsCodeConfig
+./gradlew build generateVsCodeConfig
 
 ```
 
