@@ -10,6 +10,11 @@
 #include "frc/motorcontrol/MotorControllerGroup.h"
 #include "frc/drive/MecanumDrive.h"
 #include "config.h"
+#include "frc/DoubleSolenoid.h"
+#include "frc/Timer.h"
+#include "frc/PneumaticsControlModule.h"
+#include "frc/GenericHID.h"
+#include "units/time.h"
 
 using namespace frc;
 
@@ -26,9 +31,23 @@ public:
 	WPI_TalonSRX shooter_angle_2{10};
 	WPI_PigeonIMU _pigeon{0};
 	WPI_TalonFX intake{12};
-	// Solenoid shooter_solenoid;
+
+	DoubleSolenoid shooter_solenoid{PneumaticsModuleType::CTREPCM, 0, 1};
+	Timer shooter_solenoid_timer;
+	int shooter_solenoid_previous_position=shooter_solenoid.kReverse;
+
+	DoubleSolenoid intake_solenoid{PneumaticsModuleType::CTREPCM, 2, 3};
+	Timer intake_solenoid_timer;
+
+	MotorControllerGroup shooter_angle{shooter_angle_2,shooter_angle_1};
+
+
+	
 
 	Joystick joystick{0};
+
+	GenericHID hid{0};
+	float driveSpeed=0.5;
 
 	MecanumDrive mecDrive{front_left, back_left, front_right, back_right};
 
@@ -43,7 +62,6 @@ public:
 		double joyY = -joystick.GetRawAxis(leftY);
 		double joyR = joystick.GetRawAxis(rightX);
 		
-
 		/* deadband gamepad 5%*/
 		if (fabs(joyR) < 0.05)
 			joyR = 0;
@@ -51,8 +69,68 @@ public:
 			joyX = 0;
 		if (fabs(joyY) < 0.05)
 			joyY = 0;
-		/* drive robot */
 		mecDrive.DriveCartesian(joyY, joyX, joyR);
+		if(joystick.GetPOV()==-1 || joystick.GetPOV()==90 || joystick.GetPOV()==270){
+			shooter_angle.Set(0);
+		} else if(joystick.GetPOV()==0){
+			shooter_angle.Set(-.5);
+		}else if(joystick.GetPOV()==180){
+			shooter_angle.Set(.5);
+		}
+
+
+		#ifdef analogTrigger
+			double rTrigger=joystick.GetRawAxis(triggerR);
+			double lTrigger=joystick.GetRawAxis(triggerL);
+		#endif
+
+		#ifndef analogTrigger
+			double rTrigger=joystick.GetRawButton(triggerR)?1.0:-1.0;
+			double lTrigger=joystick.GetRawButton(triggerL)?1.0:-1.0;
+		#endif
+		
+		if(rTrigger>lTrigger){
+			intake.Set(rTrigger);
+			shooter_bottom.Set(rTrigger);
+			shooter_top.Set(rTrigger);
+		}
+		if(rTrigger<lTrigger){
+			intake.Set(lTrigger*-.8);
+			shooter_bottom.Set(lTrigger*-.8);
+			shooter_top.Set(lTrigger*-.8);
+		}
+
+		if(rTrigger==lTrigger){
+			intake.Set(0);
+			shooter_bottom.Set(0);
+			shooter_top.Set(0);
+		}
+
+		/*if(rTrigger!=0){
+			RUMBLE
+		}else{
+			DO NOT RUMBLE
+		}*/
+
+		//solenoids:
+		if(joystick.GetRawButton(A_button)){
+			shooter_solenoid_timer.Start();
+			if(shooter_solenoid_previous_position==DoubleSolenoid::kForward){
+				shooter_solenoid.Set(DoubleSolenoid::kReverse);
+				shooter_solenoid_previous_position=DoubleSolenoid::kReverse;
+			}
+			if(shooter_solenoid_previous_position==DoubleSolenoid::kReverse){
+				shooter_solenoid.Set(DoubleSolenoid::kForward);
+				shooter_solenoid_previous_position=DoubleSolenoid::kForward;
+			}
+		}
+		units::second_t quarterOfASecond=.25_s;
+		if(shooter_solenoid_timer.HasElapsed(quarterOfASecond)){
+			shooter_solenoid_timer.Stop();
+			shooter_solenoid_timer.Reset();
+			shooter_solenoid_previous_position=shooter_solenoid.Get();
+			shooter_solenoid.Set(DoubleSolenoid::kOff);
+		}
 	}
 
 	void RobotInit()
