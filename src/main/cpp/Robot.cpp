@@ -10,7 +10,6 @@ TODO: add autonomous functions
 #include "frc/Solenoid.h"
 #include "frc/smartdashboard/SmartDashboard.h"
 #include "ctre/Phoenix.h"
-#include "DrivebaseSimFX.h"
 #include "frc/motorcontrol/MotorControllerGroup.h"
 #include "frc/drive/MecanumDrive.h"
 #include "frc/DoubleSolenoid.h"
@@ -33,7 +32,6 @@ public:
 	WPI_TalonFX shooter_bottom{7};
 	WPI_TalonSRX shooter_angle_1{11};
 	WPI_TalonSRX shooter_angle_2{10};
-	WPI_PigeonIMU pigeon{0};
 	WPI_TalonFX intake{12};
 
 	DoubleSolenoid shooter_solenoid{PneumaticsModuleType::CTREPCM, 0, 1};
@@ -54,13 +52,12 @@ public:
 
 	void SimulationPeriodic()
 	{
-		driveSim.Run();
 	}
 
 	void TeleopPeriodic()
 	{
 		double joyX = controller.GetLeftX();
-		double joyY = controller.GetLeftY();
+		double joyY = -controller.GetLeftY();
 		double joyR = controller.GetRightX();
 
 		/* deadband gamepad 5%*/
@@ -150,12 +147,10 @@ public:
 		back_right.SetInverted(TalonFXInvertType::FollowMaster);
 		front_left.SetInverted(TalonFXInvertType::CounterClockwise);
 		back_left.SetInverted(TalonFXInvertType::FollowMaster);
-
-		frc::SmartDashboard::PutData("Field", &driveSim.GetField());
 	}
 
 private:
-	DrivebaseSimFX driveSim{front_left, front_right, pigeon};
+	
 };
 
 #ifndef RUNNING_FRC_TESTS
