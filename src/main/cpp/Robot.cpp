@@ -33,7 +33,7 @@ public:
 	WPI_TalonFX shooter_bottom{7};
 	WPI_TalonSRX shooter_angle_1{11};
 	WPI_TalonSRX shooter_angle_2{10};
-	WPI_PigeonIMU _pigeon{0};
+	WPI_PigeonIMU pigeon{0};
 	WPI_TalonFX intake{12};
 
 	DoubleSolenoid shooter_solenoid{PneumaticsModuleType::CTREPCM, 0, 1};
@@ -54,7 +54,7 @@ public:
 
 	void SimulationPeriodic()
 	{
-		_driveSim.Run();
+		driveSim.Run();
 	}
 
 	void TeleopPeriodic()
@@ -151,11 +151,11 @@ public:
 		front_left.SetInverted(TalonFXInvertType::CounterClockwise);
 		back_left.SetInverted(TalonFXInvertType::FollowMaster);
 
-		frc::SmartDashboard::PutData("Field", &_driveSim.GetField());
+		frc::SmartDashboard::PutData("Field", &driveSim.GetField());
 	}
 
 private:
-	DrivebaseSimFX _driveSim{front_left, front_right, _pigeon};
+	DrivebaseSimFX driveSim{front_left, front_right, pigeon};
 };
 
 #ifndef RUNNING_FRC_TESTS
