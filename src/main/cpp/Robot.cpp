@@ -101,6 +101,9 @@ public:
 	Timer shooting_timer;
 	bool firing=false;
 
+	Timer autonomous_timer;
+	bool autonomous_shooting=false;
+
 	void SimulationPeriodic()
 	{
 	}
@@ -276,6 +279,47 @@ public:
 		shooter_angle_1.SetInverted(true);
 		shooter_angle_2.SetInverted(true);
 
+	}
+
+	void AutonomousInit(){
+		autonomous_timer.Start();
+		front_left.Set(-0.3);
+		front_right.Set(-0.3);
+		back_left.Set(-0.3);
+		back_right.Set(-0.3);
+		intake_solenoid_timer.Start();
+		climber_solenoid_timer.Start();
+	}
+
+	void AutonomousPeriodic(){
+		if(intake_solenoid_timer.Get()>10_s && intake_solenoid_timer.Get() < 10.1_s){
+			intake_solenoid.Set(DoubleSolenoid::kForward);
+		}
+		if(climber_solenoid_timer.Get()>10_s && climber_solenoid_timer.Get() < 10.1_s){
+			climber_solenoid.Set(DoubleSolenoid::kForward);
+		}
+		if(intake_solenoid_timer.Get()>10.25_s && intake_solenoid_timer.Get() < 10.35_s){
+			intake_solenoid.Set(DoubleSolenoid::kOff);
+			intake_solenoid_timer.Stop();
+			intake_solenoid_timer.Reset();
+		}
+		if(climber_solenoid_timer.Get()>10.25_s && climber_solenoid_timer.Get() < 10.35_s){
+			climber_solenoid.Set(DoubleSolenoid::kOff);
+			climber_solenoid_timer.Stop();
+			climber_solenoid_timer.Reset();
+		}
+
+		if(autonomous_timer.HasElapsed(2_s)){
+			front_left.Set(0);
+			front_right.Set(0);
+			back_left.Set(0);
+			back_right.Set(0);
+		}/*else{
+			front_left.Set(-0.3);
+			front_right.Set(-0.3);
+			back_left.Set(-0.3);
+			back_right.Set(-0.3);
+		}*/
 	}
 
 private:
