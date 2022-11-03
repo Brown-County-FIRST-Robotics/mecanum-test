@@ -111,8 +111,8 @@ public:
 	void TeleopPeriodic()
 	{
 		double joyX = controller.GetLeftX();
-		double joyY = -controller.GetLeftY();
-		double joyR = controller.GetRightX();
+		double joyR = -controller.GetLeftY();
+		double joyY = controller.GetRightX();
 
 		/* deadband gamepad 5% */
 		if (fabs(joyR) < 0.05)
