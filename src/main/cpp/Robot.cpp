@@ -84,7 +84,7 @@ public:
 	
 	float driveSpeed = 0.5;
 	float shooter_angle_speed = 1;
-	float shooter_speed = .35;
+	float shooter_speed = 1.0;
 	bool is_birb_activated = true;
 	bool hub_shooting[2] = {false,false}; // [isHubShooting, isMovingToCorrectAngle]
 	Timer hub_shooting_timer;
@@ -175,11 +175,9 @@ public:
 			climber_solenoid_timer.Start();
 			if(climber_solenoid_previous_position == DoubleSolenoid::kForward){
 				climber_solenoid.Set(DoubleSolenoid::kReverse);
-				climber_solenoid_previous_position=DoubleSolenoid::kReverse;
 			}
 			if(climber_solenoid_previous_position == DoubleSolenoid::kReverse){
 				climber_solenoid.Set(DoubleSolenoid::kForward);
-				climber_solenoid_previous_position=DoubleSolenoid::kForward;
 			}
 		}
 
@@ -194,12 +192,10 @@ public:
 			intake_solenoid_timer.Start();
 			if(intake_solenoid_previous_position==DoubleSolenoid::kForward){
 				intake_solenoid.Set(DoubleSolenoid::kReverse);
-				intake_solenoid_previous_position=DoubleSolenoid::kReverse;
 			}
 
 			if(intake_solenoid_previous_position==DoubleSolenoid::kReverse){
 				intake_solenoid.Set(DoubleSolenoid::kForward);
-				intake_solenoid_previous_position=DoubleSolenoid::kForward;
 			}		
 		}
 
@@ -214,7 +210,7 @@ public:
 			hub_shooting[0]=!hub_shooting[0];
 			hub_shooting[1]=!hub_shooting[1];
 		}
-
+		/*        UNCOMMENT THIS ONCE POTENTIOMETER IS FIXED
 		if(hub_shooting[0]){
 			if(hub_shooting[1]){
 				double potentiometer_val = static_cast<double>(potentiometer.GetValue());
@@ -255,7 +251,7 @@ public:
 				shooter_angle.Set(0);
 				hub_shooting[0]=false;
 			}
-		}
+		}*/
 
 		if(controller.GetBackButtonPressed()){
 			shooter.Set(0);
