@@ -26,12 +26,12 @@ using namespace frc;
 class Robot : public TimedRobot
 {
 public:
-	WPI_TalonFX back_left{0};
+	WPI_TalonFX back_left{1};
 	double back_left_target_pos=0;
 	double back_left_pos=0;
 	double back_left_previous_pos=0;
 
-	WPI_TalonFX front_left{1};
+	WPI_TalonFX front_left{0};
 	double front_left_target_pos=0;
 	double front_left_pos=0;
 	double front_left_previous_pos=0;
