@@ -110,7 +110,7 @@ public:
 
 	void TeleopPeriodic()
 	{
-		double joyX = controller.GetLeftX();
+		double joyX = -controller.GetLeftX();
 		double joyR = -controller.GetLeftY();
 		double joyY = controller.GetRightX();
 
