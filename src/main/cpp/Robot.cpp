@@ -115,11 +115,11 @@ public:
 		double joyY = controller.GetRightX();
 
 		/* deadband gamepad 5% */
-		if (fabs(joyR) < 0.05)
+		if (fabs(joyR) < 0.2)
 			joyR = 0;
-		if (fabs(joyX) < 0.05)
+		if (fabs(joyX) < 0.2)
 			joyX = 0;
-		if (fabs(joyY) < 0.05)
+		if (fabs(joyY) < 0.2)
 			joyY = 0;
 
 		mecDrive.DriveCartesian(joyY*driveSpeed, joyX*driveSpeed, joyR*driveSpeed);
