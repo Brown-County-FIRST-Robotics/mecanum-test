@@ -124,15 +124,15 @@ public:
 
 		mecDrive.DriveCartesian(joyY*driveSpeed, joyX*driveSpeed, joyR*driveSpeed);
 
-		if(!hub_shooting[0]){
-			if(controller.GetRightBumper()){
-				shooter_angle.Set(shooter_angle_speed);
-			}else if(controller.GetLeftBumper()){
-				shooter_angle.Set(-shooter_angle_speed);
-			}else{
-				shooter_angle.Set(0);
-			}
+	
+		if(controller.GetRightBumper()){
+			shooter_angle.Set(shooter_angle_speed);
+		}else if(controller.GetLeftBumper() && potentiometer.GetValue()>95){
+			shooter_angle.Set(-shooter_angle_speed);
+		}else{
+			shooter_angle.Set(0);
 		}
+		
 
 		if(!hub_shooting[0]){
 			if(controller.GetRightTriggerAxis()>controller.GetLeftTriggerAxis()){
